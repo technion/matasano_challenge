@@ -37,12 +37,12 @@ def detect_type(cipher)
     (0..cipher.length).step(Blocksize*2) { |n| 
         oneblock = cipher[n..n+(Blocksize-1)]; 
         if blocks.include?(oneblock)  
-            return "CBC Mode detected"; 
+            return "EBC Mode detected"; 
         else 
             blocks.push(oneblock); 
         end 
     } 
-    return "EBC mode detected";
+    return "CBC mode detected";
 end
 
 text = encryption_oracle('b' * (Blocksize * 1024) );
