@@ -51,14 +51,36 @@ def get_blocksize
         pad = pad + 'A'; #Add to the pad
         text = encryption_oracle(pad);
     end
-    #n will now pad the string to it increases blocksize a second time.
-    l1 = text.length;
-    until text.length > l1 do
-        pad = pad + 'B'; #Add to the pad
-        text = encryption_oracle(pad);
-    end
-#The number of bytes added in the second round is Blocksize;
-    return pad.scan(/B/).size;
+    return (text.length - l1)/2 #Output is hex, so /2 to get actual
+end
+
+def get_secret_blocks(blocksize)
+    s = encryption_oracle('').length;
+    s /= 2 #Hex encoding
+    s /= blocksize
+    return s;
+end
+
+def crack_oracle(blocksize)
+    numblocks = get_secret_blocks(blocksize);
+
+    plain = [];
+
+    (1..numblocks-1).each { |k| 
+        (0..(blocksize-1)).to_a.reverse.each { |b| 
+            oneshort = encryption_oracle('A' * b);
+            oneshort = oneshort[blocksize*((k-1)*2)..(blocksize-1)*(k*2)]; 
+            n = 0;
+            begin
+                n += 1;
+                #puts "Checking for #{'A' * b + plain.join + n.chr}";
+                calculated = encryption_oracle('A' * b + plain.join + n.chr);
+                calculated = calculated[blocksize*((k-1)*2)..(blocksize-1)*(k*2)];
+            end until calculated === oneshort
+            plain.push(n.chr);
+        }
+    }
+    return plain;
 end
 
 detected_block = get_blocksize;
@@ -67,20 +89,6 @@ puts "Detected blocksize is #{detected_block}";
 longblock = encryption_oracle('K' * 1024);
 puts detect_type(longblock);
 
-
-plain = [];
-(0..(detected_block-1)).to_a.reverse.each { |b| 
-    oneshort = encryption_oracle('A' * b);
-    oneshort = oneshort[0..(detected_block-1)*2]; #Double size because of hex output
-    n = 0;
-    begin
-        n += 1;
-        #puts "Checking for #{'A' * b + plain.join + n.chr}";
-        calculated = encryption_oracle('A' * b + plain.join + n.chr);
-        calculated = calculated[0..(detected_block-1)*2];
-    end until calculated === oneshort
-    plain.push(n.chr);
-    puts "Found byte #{n.chr}";
-
-}
+plain = crack_oracle(detected_block);
+puts plain.join;
 
