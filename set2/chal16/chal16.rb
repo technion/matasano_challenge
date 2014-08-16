@@ -75,7 +75,7 @@ def add_pad(str)
    inblock = str.length % Blocksize #Finds the characters in the current block
    padlen = Blocksize - inblock
    if padlen == 0
-       return str + '\0' * Blocksize #Special case for exact blocksize
+       return str + Blocksize.ord * Blocksize #Special case for exact blocksize
    end
    
    str = str + padlen.chr * padlen
