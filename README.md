@@ -3,5 +3,5 @@ http://cryptopals.com
 
 technion@lolware.net
 
-Current status: Set one completed.
+Current status: All of set one and set two completed.
 
