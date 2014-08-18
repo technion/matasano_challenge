@@ -6,7 +6,9 @@ def check_pad(str)
     
     padstr = last.chr * last.ord
 
-    unless str.match(/#{padstr}/)
+    #unless str.match(/#{padstr}/)
+    padstr = Regexp.escape(padstr)
+    unless /#{padstr}\B/.match(str)
         raise "Invalid padding"
     end
 
