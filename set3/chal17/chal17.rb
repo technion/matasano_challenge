@@ -9,11 +9,10 @@ $iv
 
 def set_cipher
     #Debugging options first
-    $iv = "\x15" * Blocksize
+    #$iv = "E" * Blocksize
     #$key = "\x00" * Blocksize
-    #$iv = "YELLOW SUBMARINE"
     $key = OpenSSL::Random.random_bytes(16)
-    #$iv = OpenSSL::Random.random_bytes(Blocksize)
+    $iv = OpenSSL::Random.random_bytes(Blocksize)
 end
 
 def block_xor(a, b) 
@@ -103,40 +102,61 @@ def decrypt_oracle(enc)
     return ret 
 end 
 
-def recover_block(enc)
-    enc = enc[0..Blocksize-1]
+def recover_block(enc, prevblock)
+    if enc.length != Blocksize || prevblock.length != Blocksize
+        raise "Incorrect block size to recover"
+    end
     ret = "" 
     gen = ""
     (0..15).to_a.reverse.each { |k| 
-        (0..254).each { |n|
-            testblock = '0' * k + n.chr + gen + enc #+ b.chr
+        (0..255).each { |n|
+            if n == 255
+                puts "Dumping #{ret}"
+                raise "Failed to find a value"
+            end
+            testblock = '0' * k + n.chr + gen + enc 
+            if testblock.length != 2*Blocksize
+                raise "Test block had incorrect blocksize"
+            end
+            #puts "Lengths are #{testblock.length}"
             begin
                 decrypt_oracle(testblock)
             rescue StandardError
                 #The decrypt_oracle will raise this if the padding is invalid
                 next
             end
-            b = (n.ord ^ (Blocksize-k).ord ^ $iv[k].ord).ord 
+            b = (n.ord ^ (Blocksize-k).ord ^ prevblock[k].ord).ord 
             #Debugging
             #puts "B was #{b.chr}"
             ret = b.chr + ret 
             break #No need to continue once identified
         }
-        gen = ret.bytes.map.with_index{ |x, i|  
-            ((Blocksize-k+1).ord ^ x.ord ^ $iv[Blocksize-i-1].ord).chr }.join
+        gen = ret.bytes.map.with_index{ |x, i|  #puts "Putting #{prevblock[k+i]}";
+            ((Blocksize-k+1).ord ^ x.ord ^ prevblock[k+i].ord).chr}.join
+
         #Debugging
         #puts "The gen is #{k} length #{gen.length} on " + gen.unpack('H*').join
     }
     puts "We returned #{ret}"
 end  
 
+def get_cipher
+    plain = "MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc="
+    plain = add_pad(plain)
+    enc = encrypt_cbc(plain)
+    return enc
+end
 
 set_cipher
+enc = get_cipher
 
-plain = "MDAwMDAwTm93IHRoa"
-plain = add_pad(plain)
-#puts ("\x02".ord ^ "o".ord ^ $iv[15].ord).ord
-enc = encrypt_cbc(plain)
-#puts decrypt_oracle(enc)
-recover_block(enc)
+prevblock = $iv
+recover_block(enc[0..Blocksize-1], $iv)
+exit
+
+(0..2).each { |n|
+    block = enc[Blocksize*n..(Blocksize*(n+1))-1]
+    recover_block(block, prevblock)
+    prevblock = block
+}
 
