@@ -7,11 +7,11 @@ Blocksize = 16
 class AESCTR
     def initialize
         @nonce = "\0" * 8 #64-bit / 8 bits
-        @ctr = 1
+        @ctr = 0
         @openssl = OpenSSL::Cipher::new('AES-128-ECB')
         @openssl.encrypt
         @openssl.padding = 0
-        @openssl.key = "\0" * 16 #128-bit / 8
+        @openssl.key = "YELLOW SUBMARINE" #128-bit / 8
     end
 
     def endecrypt(string)
@@ -58,10 +58,18 @@ class AESCTR
     end
 end
 
+encrypted = "L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ=="
 
+encrypted = encrypted.unpack('m').join
+cipher = AESCTR.new
+c = cipher.endecrypt(encrypted)
+puts c
+
+exit
+#Class debugging below
 cipher = AESCTR.new
 c = cipher.endecrypt('A' * Blocksize * 2 + 'B')
-#puts c.unpack("H*")
+puts c.unpack("H*")
 
 decipher = AESCTR.new
 puts decipher.endecrypt(c)
