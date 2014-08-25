@@ -19,7 +19,7 @@ class WelcomeController < ApplicationController
   def slow_equals(a, b)
      return false unless a.length == b.length
      (0..a.length-1).each { |n|
-         sleep(0.5)
+         sleep(0.3)
          return false if a[n] != b[n]
      }
      return true
