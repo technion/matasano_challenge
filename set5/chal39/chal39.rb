@@ -19,6 +19,25 @@ class RSA
         @d = modinv(@e, et)
     end
 
+    def getpubkeys
+        return @e, @n
+    end
+
+    def encode(string)
+        #Encodes a string as an integer
+        stringhex = string.unpack("H*").join
+        stringi = stringhex.to_i(16)
+        return stringi
+    end
+
+    def decode(stringi)
+        #Reverses encode()
+        unhex =  stringi.to_s(16)
+        orig = unhex.scan(/../).map { |x| x.hex.chr }.join
+        return orig
+    end
+
+
     def encrypt(m)
         return m.to_bn.mod_exp(@e, @n)
     end
@@ -33,9 +52,9 @@ class RSA
         #Assumes a, b >= 0, and that at least one of them is > 0.
         #Bounds on output values: |x|, |y| <= max(a, b).
         #g removed because we don't want it
-        return [0, 1] if a == 0
+        return 0, 1 if a == 0
         y, x = recursive_egcd(b % a, a)
-        return [x - (b / a)*y, y]
+        return x - (b / a)*y, y
     end
 
     def modinv(e, et)
@@ -47,7 +66,14 @@ end
 
 r = RSA.new
 
-c = r.encrypt(42)
+e, n = r.getpubkeys
+
+string = "My String"
+m = r.encode(string)
+c = r.encrypt(m)
+
 m = r.decrypt(c)
-puts "The m was #{m} and c was #{c}"
+m = r.decode(m)
+puts  "The m was #{m} and c was #{c}"
+
 
