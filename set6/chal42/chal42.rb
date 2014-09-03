@@ -62,12 +62,9 @@ fakesigenc = r.encode(fakesig)
 fakesigenc = fakesigenc << (magic*8)
 
 #The generated string is not a perfect cube. nthroot will round down, and
-#the signed hash ends up too small. Obtain cube root, add one, cube it again
-#for a perfect cube, then cube root again.
+#the signed hash ends up too small. Obtain cube root, add one
 rootsig = nthroot(3, fakesigenc)
 rootsig += 1
-rootsig = rootsig**3
-rootsig = nthroot(3, rootsig)
 r.check_sig(rootsig, TEXT) # Will raise exception on error
 puts "Successfully verified signature for " + TEXT
 
