@@ -25,18 +25,33 @@ def temper(y)
 end
 
 def untemper(y)
-    #Worked backwards to identify
-    #http://www.randombit.net/bitbashing/2009/07/21/inverting_mt19937_tempering.html
-    y ^= (y >> 18)    
-    y ^= (y << 15) & 0xefc60000
-    y ^= (y << 7) & 0x1680
-    y ^= (y << 7) & 0xc4000
-    y ^= (y << 7) & 0xd200000
-    y ^= (y << 7) & 0x90000000
-    y ^= (y >> 11) & 0xffcc00000
-    y ^= (y >> 11) & 0x2ff800
-    y ^= (y >> 11) & 0x7ff
+    #Port of https://github.com/gaganpreet/matasano-crypto-3/blob/ab1f8684d3730eb67029e0d6c9e53113a2dedcee/src/clone_mt.py
+    y = y ^ (y >> 18)
+    y = y ^ ((y << 15) & 4022730752)
+    y = untemper2(y)
+    y = untemper3(y)
     return y
+end
+def untemper3(y)
+    a = y >> 11
+    b = y ^ a
+    c = b >> 11
+    return (y ^ c)
+end
+
+def untemper2(y)
+    mask = 2636928640
+    a = y << 7
+    b = y ^ (a & mask)
+    c = b << 7
+    d = y ^ (c & mask)
+    e = d << 7
+    f = y ^ (e & mask)
+    g = f << 7
+    h = y ^ (g & mask)
+    i = h << 7
+    k = y ^ (i & mask)
+    return k
 end
 
 
