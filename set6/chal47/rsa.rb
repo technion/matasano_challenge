@@ -4,7 +4,7 @@
 require 'openssl'
 
 class RSA
-    Bits = 512
+    Bits = 256
     def initialize
         #Public key is @e, @n
         #Private key is @d, @n
@@ -21,6 +21,12 @@ class RSA
 
     def getpubkeys
         return @e, @n
+    end
+
+    def getk
+        #This would not exist in any normal RSA. This value would usually be
+        #derived from keysize at the other side. Putting here simplifies code.
+        return @k
     end
 
     def os2ip(string)
