@@ -57,6 +57,15 @@ def test_padding_oracle(c)
     puts "Padding oracle tested"
 end
 
+def myceil(a, b)
+   #This is a utility function.
+   res = a / b
+   if (a % b)
+       res += 1
+   end
+   return res
+end
+
 rsatest
 
 $r = RSA.new
@@ -67,80 +76,96 @@ cipher = $r.encrypt_add_pad(SECRET)
 cipher = $r.os2ip(cipher)
 target = cipher
 cipher = $r.encrypt(cipher)
-
-test_padding_oracle(cipher)
-
 #Values used throughout the attack
 k = $r.getk
-b = 2 ** (8 * (k-2))
-#Step 2a: The first 's'
-s = n/(3 * b)
-found = 0
-while found == 0 
-    c = $r.encrypt(s)
-    test = (cipher * c) % n
-    found = 1
-    begin
-        padding_oracle(test)
-    rescue
-        found = 0
+puts "k found is " + k.to_s
+
+#This is the "blinding" M assignment
+b = 2 ** (8 * (k-2)) #This is "B"
+$interval = [2 * b, (3 * b) - 1]
+$i = 1
+
+#This is just a test harness. It's called a little late because
+#it needs a fully constructed cipher.
+test_padding_oracle(cipher)
+
+
+def step2a(b, n, cipher)
+    #Step 2a: The first 's' candidate
+    s = n/(3 * b)
+    while 1 
+        c = $r.encrypt(s)
+        test = (cipher * c) % n
+        begin
+            padding_oracle(test)
+            break
+        rescue
+            s += 1
+        end
     end
-    s += 1
+    return s
 end
-s -= 1 #Remove that extraa addition
-puts "Valid s found " + s.to_s
 
-interval = [2 * b, (3 * b) - 1]
-#Step 3
+def step2(s, b, n, cipher)
+    if $i == 1
+        s = step2a(b, n, cipher)
+        puts "Valid s found " + s.to_s
+        return s
+    end
+    s = step2c(s, b, n, cipher)
+    return s
 
-#min_r = interval[0] * s - 3 * b + 1
-#max_r = interval[1] * s - 2 * b
-#aa = (2 * b + max_r * n)/s
-#bb = (2 * b - 1 * max_r * n)/s
-#interval[0] = [interval[0], aa].max
-#interval[1] = [interval[1], bb].min
-#puts interval[0]
-#puts interval[1]
+end
 
-#exit
-#Step 2c: searching
-
-while 1
-    r = 2 * ((interval[1] * s) - 2 * b) / n
-    s = (2 * b + r * n) / interval[1]
-    found = 0
+def step2c(s, b, n, cipher)
+    r = myceil(2 * (($interval[1] * s) - 2 * b), n)
+    s = (2 * b + r * n) / $interval[1]
     while 1
         c = $r.encrypt(s)
         test = (cipher * c) % n
-        found = 1
         begin
             padding_oracle(test)
+            break
         rescue
-            found = 0
+            #Do nothing
         end
-        break if found == 1
-        
+
         s += 1
-        if s > ( (3 * b + r * n) / interval[0] )
-            puts "Limit exceeded, incrementing r"
+        if s > ( (3 * b + r * n) / $interval[0] )
+            #puts "Limit exceeded, incrementing r"
             r += 1
-            s = (2 * b + r * n) / interval[1]
+            s = (2 * b + r * n) / $interval[1]
         end
 
     end
-    puts "Sound found was " + s.to_s
+    return s
 
-    first = [interval[0], (2 * b + r * n)/s].max
-    second = [interval[1], (3 * b - 1 + r * n)/s].min
-
-    puts first
-    puts second
-    break if first == second
-    s += 1
 end
 
-puts "Your target is: " + target.to_s
-puts "Got " + first.to_s
+def step3(s, b, n)
+    min_r = myceil(($interval[0] * s - 3 * b + 1),  n)
+    max_r = ($interval[1] * s - 2 * b) / n
+    (min_r..max_r).each { |r|
+        aa = myceil(2*b + r*n, s)
+        bb = (3 * b - 1 + r*n) / s
+        $interval[0] = [$interval[0], aa].max
+        $interval[1] = [$interval[1], bb].min
+    }
+end
+    
 
+while($interval[0] != $interval[1])
+    s = step2(s, b, n, cipher)
+    step3(s, b, n)
+    puts "New s value is " + s.to_s
+    puts $interval[0]
+    puts $interval[1]
+    $i += 1
+end
 
+#Step 4
+#I don't get it - step four never happened and the result still works.
+broken = $r.i2osp($interval[0])
+broken = $r.encrypt_remove_pad(broken)
+puts "Cracked phrase is: " + broken
 

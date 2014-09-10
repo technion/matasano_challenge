@@ -17,6 +17,7 @@ class RSA
         @e = 3
         @d = modinv(@e, et)
         @k = Bits / 8 #Where does this come from?
+#Debugginf values
     end
 
     def getpubkeys
