@@ -151,6 +151,7 @@ def step3(s, b, n)
         $interval[0] = [$interval[0], aa].max
         $interval[1] = [$interval[1], bb].min
     }
+    raise "This string had an interval - not implemented" if min_r != max_r
 end
     
 
