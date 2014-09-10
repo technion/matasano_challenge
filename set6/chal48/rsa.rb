@@ -4,7 +4,7 @@
 require 'openssl'
 
 class RSA
-    Bits = 256
+    Bits = 768
     def initialize
         #Public key is @e, @n
         #Private key is @d, @n

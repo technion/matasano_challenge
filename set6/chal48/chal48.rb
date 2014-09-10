@@ -76,6 +76,7 @@ e, n = $r.getpubkeys
 #Construct an encrypted string
 cipher = $r.encrypt_add_pad(SECRET)
 cipher = $r.os2ip(cipher)
+puts "target is " + cipher.to_s
 cipher = $r.encrypt(cipher)
 
 #Values used throughout the attack
@@ -151,18 +152,29 @@ def step2c(s, b, n, cipher)
 end
 
 def step3(s, b, n)
+    #Start with a fresh set of intervals and build them up
+    newmininterval = []
+    newmaxinterval = []
+
     min_r = myceil(($mininterval[0] * s - 3 * b + 1),  n)
     max_r = ($maxinterval[0] * s - 2 * b) / n
-    #return if min_r > max_r
+    return if min_r > max_r
 
     (min_r..max_r).each { |r|
         aa = myceil(2*b + r*n, s)
         bb = (3 * b - 1 + r*n) / s
-        $mininterval[0] = [$mininterval[0], aa].max
-        $maxinterval[0] = [$maxinterval[0], bb].min
+        candidatemin = [$mininterval[0], aa].max
+        candidatemax = [$maxinterval[0], bb].min
+        next if candidatemin > candidatemax
+
+        newmininterval.push(candidatemin)
+        newmaxinterval.push(candidatemax)
     }
+    $mininterval = newmininterval
+    $maxinterval = newmaxinterval
     if min_r != max_r
         puts "There were #{max_r} #{min_r} top intervals"
+        puts "We pulled min " + newmininterval[0].to_s
     end
 end
 
