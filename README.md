@@ -10,3 +10,6 @@ Current status: All of set one and set two completed.
     Set six completed!
 
 Note: Challenge 48 does not work 100% of the time. There is some bug in the solution somewhere, which Im continuing to work on. But for the purposes of cracking RSA, its complete.
+
+Blog posting on this work here: https://lolware.net/cryptochallenge.html
+
