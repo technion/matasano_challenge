@@ -143,15 +143,16 @@ def step2c(s, b, n, cipher)
 end
 
 def step3(s, b, n)
-    min_r = myceil(($interval[0] * s - 3 * b + 1),  n)
+    min_r = myceil(($interval[0] * s - 3 * b + 1), n)
     max_r = ($interval[1] * s - 2 * b) / n
+    min_r -= 1 if min_r == max_r + 1
     (min_r..max_r).each { |r|
         aa = myceil(2*b + r*n, s)
         bb = (3 * b - 1 + r*n) / s
         $interval[0] = [$interval[0], aa].max
         $interval[1] = [$interval[1], bb].min
     }
-    raise "This string had an interval - not implemented" if min_r != max_r
+    raise "This string had an interval - not implemented. Min #{min_r} and max #{max_r}" if min_r != max_r
 end
     
 

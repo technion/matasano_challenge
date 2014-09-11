@@ -62,7 +62,7 @@ def padding_oracle(c)
     plain = $r.i2osp(plain.to_i)
 
     #This is a naive implementation of the padding removal
-    regx =  Regexp.new("\x00\x02", nil, 'n')
+    regx =  Regexp.new("^\x00\x02", nil, 'n')
 
     raise "Padding removal failure" unless plain.match(regx)
 end
@@ -76,7 +76,7 @@ e, n = $r.getpubkeys
 #Construct an encrypted string
 cipher = $r.encrypt_add_pad(SECRET)
 cipher = $r.os2ip(cipher)
-puts "target is " + cipher.to_s
+puts "Target is " + cipher.to_s
 cipher = $r.encrypt(cipher)
 
 #Values used throughout the attack
@@ -88,6 +88,9 @@ b = 2 ** (8 * (k-2)) #This is "B"
 $mininterval = [2 * b]
 $maxinterval = [(3 * b) - 1]
 
+puts "Initial minimum: " + $mininterval[0].to_s
+puts "Initial maximum: " + $maxinterval[0].to_s
+
 #This is just a test harness. It's called a little late because
 #it needs a fully constructed cipher.
 test_padding_oracle(cipher)
@@ -95,7 +98,7 @@ test_padding_oracle(cipher)
 
 def step2a(b, n, cipher)
     #Step 2a: The first 's' candidate
-    s = n/(3 * b)
+    s = myceil(n, (3 * b))
     while 1 
         c = $r.encrypt(s)
         test = (cipher * c) % n
@@ -143,7 +146,7 @@ def step2c(s, b, n, cipher)
         if s > ( (3 * b + r * n) / $mininterval[0] )
             #puts "Limit exceeded, incrementing r"
             r += 1
-            s = (2 * b + r * n) / $maxinterval[0]
+            s = myceil((2 * b + r * n), $maxinterval[0])
         end
 
     end
@@ -156,26 +159,33 @@ def step3(s, b, n)
     newmininterval = []
     newmaxinterval = []
 
-    min_r = myceil(($mininterval[0] * s - 3 * b + 1),  n)
-    max_r = ($maxinterval[0] * s - 2 * b) / n
-    return if min_r > max_r
+    (0..$mininterval.length-1).each { |i|
+        min_r = myceil(($mininterval[i] * s - 3 * b + 1),  n)
+        max_r = ($maxinterval[i] * s - 2 * b) / n
+        #puts "min was #{min_r} and max was #{max_r}"
+        next if min_r > max_r
 
-    (min_r..max_r).each { |r|
-        aa = myceil(2*b + r*n, s)
-        bb = (3 * b - 1 + r*n) / s
-        candidatemin = [$mininterval[0], aa].max
-        candidatemax = [$maxinterval[0], bb].min
-        next if candidatemin > candidatemax
+        (min_r..max_r+1).each { |r|
+            aa = myceil(2*b + r*n, s)
+            bb = (3 * b - 1 + r*n) / s
+            candidatemin = [$mininterval[i], aa].max
+            candidatemax = [$maxinterval[i], bb].min
+            next if candidatemin > candidatemax
+            puts candidatemin
+            puts candidatemax
 
-        newmininterval.push(candidatemin)
-        newmaxinterval.push(candidatemax)
+            newmininterval.push(candidatemin)
+            newmaxinterval.push(candidatemax)
+        }
     }
+    puts "Number of intervals found: " + newmininterval.length.to_s
+    if newmininterval.length == 0
+        #No improved intervals found
+        return
+    end
+
     $mininterval = newmininterval
     $maxinterval = newmaxinterval
-    if min_r != max_r
-        puts "There were #{max_r} #{min_r} top intervals"
-        puts "We pulled min " + newmininterval[0].to_s
-    end
 end
 
 #It's a lot cleaner if we don't implement 'i'. All it determines is whether
@@ -188,13 +198,13 @@ while 1
         break if ($mininterval[0] == $maxinterval[0])
         s = step2c(s, b, n, cipher)
     else
-        puts "Doing b"
+        puts "Doing 2b"
         s = step2b(s, b, n, cipher)
     end
-    step3(s, b, n)
     puts "New s value is " + s.to_s
-    puts $mininterval[0]
-    puts $maxinterval[0]
+    #puts $mininterval[0]
+    #puts $maxinterval[0]
+    step3(s, b, n)
 end
 
 #Step 4
