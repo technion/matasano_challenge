@@ -37,7 +37,7 @@ def padding_oracle(c)
     plain = $r.i2osp(plain.to_i)
 
     #This is a naive implementation of the padding removal
-    regx =  Regexp.new("\x00\x02", nil, 'n')
+    regx =  Regexp.new("^\x00\x02", nil, 'n')
 
     raise "Padding removal failure" unless plain.match(regx)
 end
